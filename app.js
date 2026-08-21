@@ -200,7 +200,7 @@ function renderActivePanel() {
 // ---------- EXPORT ----------
 function buildSheetRows(warehouseId) {
   return entries.filter(e => e.warehouseId === warehouseId).map((e, i) => ({
-    '#': i + 1, 'التاريخ': e.date, 'رقم العربية': e.truck, 'الوسيلة': e.vessel, 'الوزن': e.weight, 'اسم التاسك': e.taskName
+    'Id': i + 1, 'Vessel': e.vessel, 'Task name': e.taskName, 'Date': e.date, 'Truck number': e.truck, 'Weight': e.weight
   }));
 }
 
