@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظام إدارة المخازن</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root { --bg:#10141B; --panel:#1C222C; --border:#2A313D; --accent:#F2A93B; --text:#E8EAED; --muted:#8B93A1; --green:#34D399; --yellow:#FBBF24; --red:#F87171; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
+  h1,h2,.title { font-family:'Oswald',sans-serif; letter-spacing:.02em; margin:0; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  .wrap { max-width:720px; margin:0 auto; padding:20px 16px 60px; }
+  .btn { background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 14px; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .btn:hover { border-color:var(--accent); }
+  .btn-primary { background:var(--accent); color:#14181F; border-color:var(--accent); font-weight:600; }
+  .btn-danger { color:var(--red); }
+  input, select { background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 10px; font-size:14px; width:100%; outline:none; }
+  input:focus { border-color:var(--accent); }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { color:var(--muted); text-align:right; padding:6px 4px; border-bottom:1px solid var(--border); }
+  td { padding:6px 4px; border-bottom:1px solid var(--panel); }
+  .hidden { display:none !important; }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .err { color:var(--red); font-size:13px; }
+  .picker-item { padding:8px 10px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; }
+  .picker-item:hover { background:#2A313D; }
+  .dot { width:7px; height:7px; border-radius:50%; display:inline-block; background:var(--green); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="row" style="margin-bottom:18px;">
+    <h1 class="title" style="font-size:18px;">نظام إدارة المخازن</h1>
+    <span id="syncStatus" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span class="dot"></span> متصل</span>
+  </div>
+
+  <div style="position:relative; margin-bottom:16px;">
+    <button class="btn" id="pickerBtn" style="width:100%; justify-content:space-between;">
+      <span id="pickerLabel">اختار مخزن</span><span>▾</span>
+    </button>
+    <div id="pickerList" class="card hidden" style="position:absolute; top:44px; left:0; right:0; z-index:10; padding:6px; max-height:240px; overflow-y:auto;"></div>
+  </div>
+
+  <div id="noWarehouse" class="card hidden" style="text-align:center; color:var(--muted); padding:30px;">
+    مفيش مخازن لسه. اضغط "إضافة مخزن جديد" فوق عشان تبدأ.
+  </div>
+
+  <div id="warehousePanel" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px;">
+        <div>
+          <div class="label" style="margin-bottom:0;">التاسك الحالي</div>
+          <div id="taskNameDisplay" style="font-size:15px;font-weight:600;"></div>
+        </div>
+        <button class="btn" id="editWarehouseBtn">إعدادات</button>
+      </div>
+      <div class="grid" style="margin-bottom:16px;">
+        <div style="background:#14181F;border-radius:8px;padding:12px;">
+          <div class="label">الكمية الكلية (Amount)</div>
+          <div id="capacityDisplay" class="mono" style="font-size:20px;font-weight:600;"></div>
+        </div>
+        <div style="background:#14181F;border-radius:8px;padding:12px;">
+          <div class="label">الكمية الفاضلة</div>
+          <div id="remainingDisplay" class="mono" style="font-size:20px;font-weight:600;"></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-start; gap:16px;">
+        <svg width="60" height="120" viewBox="0 0 60 120">
+          <rect x="6" y="4" width="48" height="112" rx="10" fill="#14181F" stroke="#2A313D" stroke-width="2"/>
+          <clipPath id="siloClip"><rect x="8" y="6" width="44" height="108" rx="8"/></clipPath>
+          <rect id="gaugeFill" x="8" y="114" width="44" height="0" fill="#34D399" clip-path="url(#siloClip)" style="transition:all .3s;"/>
+        </svg>
+        <div>
+          <div id="pctDisplay" class="mono" style="font-size:24px;font-weight:600;"></div>
+          <div class="label">نسبة الامتلاء</div>
+          <div id="warnDisplay" class="err hidden" style="font-size:12px;">⚠ خلي بالك، المخزن قرب يتملي</div>
+        </div>
+      </div>
+    </div>
+
+    <form id="entryForm" class="card">
+      <div style="font-weight:600;margin-bottom:10px;">إضافة سجل جديد</div>
+      <div class="grid" style="margin-bottom:10px;">
+        <div><label class="label">التاريخ</label><input type="date" id="entryDate" required /></div>
+        <div><label class="label">رقم العربية</label><input id="entryTruck" placeholder="مثلا 1234" required /></div>
+        <div><label class="label">الوسيلة (Vessel)</label><input id="entryVessel" placeholder="اسم الوسيلة" /></div>
+        <div><label class="label">الوزن (Weight)</label><input type="number" step="any" id="entryWeight" placeholder="0" required /></div>
+      </div>
+      <div id="entryError" class="err" style="margin-bottom:8px;"></div>
+      <button type="submit" class="btn btn-primary">+ حفظ السجل</button>
+    </form>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;">
+        <div style="font-weight:600;">سجلات المخزن</div>
+        <div class="row" style="gap:8px;">
+          <button class="btn" id="exportOneBtn">تصدير هذا المخزن</button>
+          <button class="btn" id="exportAllBtn">تصدير الكل</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>#</th><th>التاريخ</th><th>العربية</th><th>الوسيلة</th><th>الوزن</th><th></th></tr></thead>
+          <tbody id="entriesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="warehouseModalBg" class="modal-bg hidden">
+  <form id="warehouseForm" class="card" style="width:320px; max-width:100%;">
+    <div class="row" style="margin-bottom:12px;">
+      <div id="warehouseModalTitle" style="font-weight:600;">مخزن جديد</div>
+      <span style="cursor:pointer;" id="closeWarehouseModal">✕</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div><label class="label">اسم المخزن</label><input id="wName" placeholder="مثلا مخزن 1" required /></div>
+      <div><label class="label">الكمية الكلية (Amount)</label><input type="number" step="any" id="wCapacity" placeholder="0" required /></div>
+      <div><label class="label">اسم التاسك</label><input id="wTaskName" placeholder="اسم التاسك الحالية" /></div>
+      <div class="row" style="gap:10px;">
+        <div style="flex:1;"><label class="label">تحذير أصفر عند %</label><input type="number" id="wYellow" value="70" /></div>
+        <div style="flex:1;"><label class="label">تحذير أحمر عند %</label><input type="number" id="wRed" value="90" /></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="justify-content:center;">حفظ</button>
+      <button type="button" id="deleteWarehouseBtn" class="btn btn-danger hidden" style="justify-content:center;">حذف المخزن</button>
+    </div>
+  </form>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
