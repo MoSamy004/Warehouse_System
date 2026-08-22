@@ -10,8 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
   });
 });
-
-let warehouses = [];
 let warehouses = [];
 let entries = [];
 let activeId = null;
