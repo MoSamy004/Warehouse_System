@@ -8,7 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root { --bg:#10141B; --panel:#1C222C; --border:#2A313D; --accent:#F2A93B; --text:#E8EAED; --muted:#8B93A1; --green:#34D399; --yellow:#FBBF24; --red:#F87171; }
+:root { --bg:#10141B; --panel:#1C222C; --border:#2A313D; --accent:#F2A93B; --text:#E8EAED; --muted:#8B93A1; --green:#34D399; --yellow:#FBBF24; --red:#F87171; }
+  [data-theme="light"] { --bg:#F3F4F6; --panel:#FFFFFF; --border:#E2E5EA; --text:#14181F; --muted:#6B7280; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
   h1,h2,.title { font-family:'Oswald',sans-serif; letter-spacing:.02em; margin:0; }
@@ -40,7 +41,10 @@
 <div class="wrap">
    <div class="row" style="margin-bottom:18px;">
     <h1 class="title" style="font-size:18px;">نظام إدارة المخازن</h1>
-    <span id="syncStatus" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span class="dot"></span> متصل</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="syncStatus" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span class="dot"></span> متصل</span>
+      <button class="btn" id="themeToggle" type="button">🌙</button>
+    </div>
   </div>
 
   <div class="card">
