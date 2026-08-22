@@ -38,9 +38,30 @@
 <body>
 
 <div class="wrap">
-  <div class="row" style="margin-bottom:18px;">
+   <div class="row" style="margin-bottom:18px;">
     <h1 class="title" style="font-size:18px;">نظام إدارة المخازن</h1>
     <span id="syncStatus" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span class="dot"></span> متصل</span>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:10px;">
+      <div style="font-weight:600;">الكمية الإجمالية (كل المخازن)</div>
+      <button class="btn" id="editGlobalBtn" type="button">تعديل</button>
+    </div>
+    <div class="grid">
+      <div style="background:#14181F;border-radius:8px;padding:12px;">
+        <div class="label">الكمية الإجمالية</div>
+        <div id="globalTotalDisplay" class="mono" style="font-size:20px;font-weight:600;"></div>
+      </div>
+      <div style="background:#14181F;border-radius:8px;padding:12px;">
+        <div class="label">المسحوب من كل المخازن</div>
+        <div id="globalWithdrawnDisplay" class="mono" style="font-size:20px;font-weight:600;"></div>
+      </div>
+      <div style="background:#14181F;border-radius:8px;padding:12px;">
+        <div class="label">المتبقي</div>
+        <div id="globalRemainingDisplay" class="mono" style="font-size:20px;font-weight:600;"></div>
+      </div>
+    </div>
   </div>
 
   <div style="position:relative; margin-bottom:16px;">
@@ -136,7 +157,17 @@
     </div>
   </form>
 </div>
-
+<div id="globalModalBg" class="modal-bg hidden">
+  <form id="globalForm" class="card" style="width:280px; max-width:100%;">
+    <div class="row" style="margin-bottom:12px;">
+      <div style="font-weight:600;">تعديل الكمية الإجمالية</div>
+      <span style="cursor:pointer;" id="closeGlobalModal">✕</span>
+    </div>
+    <label class="label">الكمية الإجمالية</label>
+    <input type="number" step="any" id="globalTotalInput" required style="margin-bottom:10px;" />
+    <button type="submit" class="btn btn-primary" style="justify-content:center; width:100%;">حفظ</button>
+  </form>
+</div>
 <script src="app.js"></script>
 </body>
 </html>
