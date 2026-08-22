@@ -4,6 +4,7 @@ let activeId = null;
 let editingWarehouseId = null;
 let confirmDeleteEntry = null;
 let confirmDeleteWarehouse = false;
+let globalSettings = { totalAmount: 0 };
 
 const $ = (id) => document.getElementById(id);
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -22,17 +23,41 @@ async function api(path, options) {
 
 async function loadAll() {
   try {
-    const [w, e] = await Promise.all([api('warehouses'), api('entries')]);
+    const [w, e, s] = await Promise.all([api('warehouses'), api('entries'), api('settings')]);
     warehouses = w;
     entries = e;
+    globalSettings = s;
     if (!activeId && warehouses.length) activeId = warehouses[0].id;
     if (activeId && !warehouses.find(x => x.id === activeId)) activeId = warehouses[0] ? warehouses[0].id : null;
     renderPicker();
     renderActivePanel();
+    renderGlobalSummary();
   } catch (err) {
     console.error(err);
   }
 }
+
+function renderGlobalSummary() {
+  const totalWithdrawn = entries.reduce((s, e) => s + e.weight, 0);
+  const remaining = globalSettings.totalAmount - totalWithdrawn;
+  $('globalTotalDisplay').textContent = globalSettings.totalAmount.toLocaleString();
+  $('globalWithdrawnDisplay').textContent = totalWithdrawn.toLocaleString();
+  $('globalRemainingDisplay').textContent = remaining.toLocaleString();
+  $('globalRemainingDisplay').style.color = remaining < 0 ? '#F87171' : '#E8EAED';
+}
+
+$('editGlobalBtn').addEventListener('click', () => {
+  $('globalTotalInput').value = globalSettings.totalAmount;
+  $('globalModalBg').classList.remove('hidden');
+});
+$('closeGlobalModal').addEventListener('click', () => $('globalModalBg').classList.add('hidden'));
+$('globalForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const totalAmount = parseFloat($('globalTotalInput').value) || 0;
+  await api('settings', { method: 'PUT', body: JSON.stringify({ totalAmount }) });
+  $('globalModalBg').classList.add('hidden');
+  loadAll();
+});
 
 loadAll();
 setInterval(loadAll, 8000); // مزامنة كل 8 ثواني بين كل الأجهزة
