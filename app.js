@@ -1,3 +1,17 @@
+const savedTheme = localStorage.getItem('warehouse-theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+document.addEventListener('DOMContentLoaded', () => {
+  $('themeToggle').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+  $('themeToggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('warehouse-theme', next);
+    $('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
+  });
+});
+
+let warehouses = [];
 let warehouses = [];
 let entries = [];
 let activeId = null;
