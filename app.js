@@ -142,6 +142,59 @@ $('deleteWarehouseBtn').addEventListener('click', async () => {
 
 // ---------- ENTRY FORM ----------
 $('entryDate').value = todayStr();
+
+$('scanBtn').addEventListener('click', () => $('scanInput').click());
+$('scanInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  $('ocrStatus').textContent = '⏳ جاري قراءة الصورة... ممكن ياخد شوية ثواني';
+  try {
+    const result = await Tesseract.recognize(file, 'eng+ara');
+    const text = result.data.text;
+    const parsed = parseOcrText(text);
+    if (parsed.date) $('entryDate').value = parsed.date;
+    if (parsed.truck) $('entryTruck').value = parsed.truck;
+    if (parsed.vessel) $('entryVessel').value = parsed.vessel;
+    if (parsed.weight) $('entryWeight').value = parsed.weight;
+    $('ocrStatus').textContent = '✅ اتقرت الصورة، راجع الحقول فوق قبل ما تحفظ';
+  } catch (err) {
+    $('ocrStatus').textContent = '⚠ حصل خطأ في قراءة الصورة، جرب تاني بصورة أوضح';
+    console.error(err);
+  }
+  e.target.value = '';
+});
+
+function parseOcrText(text) {
+  let date = '';
+  let m = text.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if (m) {
+    date = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  } else {
+    m = text.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+    if (m) {
+      let year = m[3].length === 2 ? '20' + m[3] : m[3];
+      date = `${year}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
+  }
+
+  const numbers = (text.match(/\d+(\.\d+)?/g) || []).map(Number).filter(n => !isNaN(n));
+  let weight = '', truck = '';
+  if (numbers.length) {
+    const maxVal = Math.max(...numbers);
+    weight = maxVal;
+    const other = numbers.find(n => n !== maxVal);
+    truck = other !== undefined ? other : '';
+  }
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  let vessel = '';
+  lines.forEach(l => {
+    const lettersOnly = l.replace(/[0-9]/g, '').trim();
+    if (lettersOnly.length > vessel.length) vessel = lettersOnly;
+  });
+
+  return { date, truck, vessel, weight };
+}
 $('entryForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   $('entryError').textContent = '';
